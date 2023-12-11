@@ -29,7 +29,7 @@ def main():
         for receipt in range(len(pageItems)):
             response = get_receipt_by_id(pageItems[receipt]['id'], authCookie)
             data.append(response)
-        return data
+    return data
 
 def get_receipts_from_pageindex(index, authCookie):
     req = requests.get(f"https://www.lidl.de/mre/api/v1/tickets?country=DE&page={index+1}", headers=authCookie)
@@ -46,7 +46,9 @@ def get_receipt_by_id(id, authCookie):
     return req.json()
 
 def selenium_obtain_authToken():
+    twoFactor = True if input("Are you using 2-factor authentication for LIDL Plus? (y/n): ") == "y" else False
     driver = webdriver.Chrome()
+
 
     driver.get("https://lidl.de/user-api/login?step=login&redirect=https%3A%2F%2Fwww.lidl.de%2F")
 
@@ -61,10 +63,11 @@ def selenium_obtain_authToken():
             EC.presence_of_element_located((By.XPATH, '/html/body/div[1]/form[1]/div/section/div/div/div[3]/div/div[1]/div[2]/div/div/input'))
         )
         print("Please continue by providing your password")
-        wrapper = WebDriverWait(driver, delay).until(
-            EC.presence_of_element_located((By.XPATH, '/html/body/div/form/div/section/div/div[1]/div/div[3]/div/div/input'))
-        )
-        print("Please continue by confirming your phone number")
+        if twoFactor:
+            wrapper = WebDriverWait(driver, delay).until(
+                EC.presence_of_element_located((By.XPATH, '/html/body/div/form/div/section/div/div[1]/div/div[3]/div/div/input'))
+            )
+            print("Please continue by confirming your phone number")
         
         wrapper = WebDriverWait(driver, delay).until(
             EC.title_contains("LIDL lohnt sich")
@@ -85,6 +88,6 @@ def selenium_obtain_authToken():
 if __name__ == "__main__":
     receipts = main()
     print("Writing receipts to json file...")
-    json_objects = json.dumps(receipts, indent=None)
+    json_objects = json.dumps(receipts, indent=2)
     with open("receipts.json", 'w+') as f:
         f.write(json_objects)
